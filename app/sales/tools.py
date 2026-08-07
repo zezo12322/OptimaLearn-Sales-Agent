@@ -204,7 +204,13 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "start_time": {"type": "string", "description": "HH:MM, 24-hour"},
                     "client_name": {"type": "string"},
                     "client_email": {"type": "string"},
-                    "client_phone": {"type": "string"},
+                    "client_phone": {
+                        "type": "string",
+                        "description": (
+                            "Required — the team needs a way to reach them. On "
+                            "WhatsApp you already have it."
+                        ),
+                    },
                     "notes": {
                         "type": "string",
                         "description": (
@@ -219,6 +225,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "start_time",
                     "client_name",
                     "client_email",
+                    "client_phone",
                 ],
                 "additionalProperties": False,
             },
@@ -623,6 +630,9 @@ async def _tool_book_call(
             ("start_time", start_time),
             ("client_name", name),
             ("client_email", email),
+            # Required by the site's booking form too — a call nobody can be
+            # reached for is not a booking.
+            ("client_phone", phone),
         )
         if not value
     ]

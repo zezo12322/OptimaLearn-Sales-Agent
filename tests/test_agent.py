@@ -263,7 +263,12 @@ class TestHandoffAndBooking:
             ctx, "book_call", {"call_type": "discovery", "date": "2026-09-01"}
         )
         assert result["booked"] is False
-        assert set(result["missing"]) == {"start_time", "client_name", "client_email"}
+        assert set(result["missing"]) == {
+            "start_time",
+            "client_name",
+            "client_email",
+            "client_phone",
+        }
         assert ctx.booking is None
 
     async def test_booking_rejects_an_unusable_email(self) -> None:
@@ -280,6 +285,7 @@ class TestHandoffAndBooking:
                 "start_time": "11:00",
                 "client_name": "Sara",
                 "client_email": "not-an-email",
+                "client_phone": "01001234567",
             },
         )
         assert result["booked"] is False
@@ -309,6 +315,7 @@ class TestHandoffAndBooking:
                 "start_time": "11:00",
                 "client_name": "Sara",
                 "client_email": "sara@example.com",
+                "client_phone": "01001234567",
             },
         )
         assert result["booked"] is False
