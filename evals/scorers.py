@@ -308,3 +308,29 @@ def replied_at_all(result: TurnResult) -> Score:
     if result.reply.strip():
         return Score(True, f"{len(result.reply)} chars")
     return Score(False, "empty reply")
+
+
+def agent_actually_ran(result: TurnResult) -> Score:
+    """The real floor, and the one that matters most.
+
+    When generation fails the service returns a written fallback — a plausible
+    Arabic sentence apologising and promising a colleague — and raises a
+    handoff. That is correct behaviour for a customer. It is poison for an
+    eval: the fallback contains none of the forbidden words, quotes no price,
+    calls no tool and raises a handoff, so it *passes* `must_not_contain`,
+    `states_price_is_starting`, `did_not_use_tool` and `requests_handoff`
+    without the model having produced a single token.
+
+    Measured, not theorised: with the model unreachable, the golden set
+    reported 15 of 20 cases green. A suite that says "mostly fine" about a
+    completely dead agent is worse than no suite, because someone will believe
+    it. `agent_ok` comes straight from the API, so the check is free.
+    """
+    if result.agent_ok:
+        return Score(True, "generation succeeded")
+    return Score(
+        False,
+        "AGENT DID NOT GENERATE — this is the fallback reply, not a graded "
+        f"answer. Every other check on this case is meaningless. Reply: "
+        f"{result.reply[:120]!r}",
+    )

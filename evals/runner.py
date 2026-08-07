@@ -149,6 +149,19 @@ def report(reports: list[CaseReport]) -> int:
     print(f"\n{total - len(failed)}/{total} passed")
     if failed:
         print("failed: " + ", ".join(sorted(r.case.id for r in failed)))
+
+    # Distinguish "the agent is down" from "the agent broke the rules". They
+    # look identical in a list of red lines, and the fix for each is nothing
+    # like the fix for the other.
+    dead = [r for r in reports if any(n == "agent_actually_ran" for n, _ in r.failures)]
+    if dead:
+        print(
+            f"\n!! {len(dead)}/{total} cases never reached the model — generation "
+            "failed and the service returned its fallback reply.\n"
+            "   This is an OUTAGE, not a set of rule violations. Check the model "
+            "credentials and endpoint,\n"
+            "   then re-run. Nothing about the prompt has been measured."
+        )
     return 1 if failed else 0
 
 

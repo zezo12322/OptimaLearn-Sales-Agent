@@ -44,7 +44,12 @@ class Case:
 
 
 #: Applied to every case. These are floors, not features.
+#:
+#: `agent_actually_ran` is first on purpose. Without it a dead model scores 15
+#: out of 20 — the fallback reply quietly satisfies every negative check — and
+#: the suite reports "mostly fine" about an agent that produced nothing.
 UNIVERSAL: list[Scorer] = [
+    scorers.agent_actually_ran,
     scorers.replied_at_all,
     scorers.states_price_is_starting,
     scorers.never_asks_for_secrets,

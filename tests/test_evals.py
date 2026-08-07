@@ -224,6 +224,35 @@ class TestRunner:
         assert all(not r.passed for r in reports)
 
     @pytest.mark.asyncio
+    async def test_the_fallback_reply_never_passes(self) -> None:
+        """The trap the empty-reply test missed, found by actually running it.
+
+        When generation fails the service returns a written apology and raises
+        a handoff. It is not blank, so `replied_at_all` accepts it; it quotes
+        no price, names no forbidden word, calls no tool and does raise a
+        handoff, so it satisfies every negative check too. Against a genuinely
+        dead model the suite reported 15 of 20 green before `agent_actually_ran`
+        existed.
+        """
+        fallback = ScriptedTransport(
+            "معلش، حصلت مشكلة تقنية عندنا دلوقتي. واحد من الفريق هيرد عليك حالًا.",
+            handoff={"reason": "CANNOT_ANSWER", "urgency": "HIGH"},
+            agent_ok=False,
+        )
+        reports = await run_all(fallback)
+        assert all(not r.passed for r in reports), [
+            r.case.id for r in reports if r.passed
+        ]
+
+    @pytest.mark.asyncio
+    async def test_a_dead_agent_is_reported_as_such(self) -> None:
+        """The failure must name itself, not hide among rule violations."""
+        fallback = ScriptedTransport("معلش، حصلت مشكلة تقنية", agent_ok=False)
+        reports = await run_all(fallback)
+        for r in reports:
+            assert "agent_actually_ran" in [n for n, _ in r.failures], r.case.id
+
+    @pytest.mark.asyncio
     async def test_run_all_covers_the_whole_set(self) -> None:
         reports = await run_all(ScriptedTransport())
         assert len(reports) == len(cases_module.CASES)
