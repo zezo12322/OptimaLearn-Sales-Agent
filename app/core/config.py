@@ -117,6 +117,9 @@ class Settings(BaseSettings):
     sales_default_timezone: str = "Africa/Cairo"
     sales_max_outbound_per_lead_per_day: int = 1
     sales_max_outbound_per_lead_total: int = 5
+    #: Stop proactive contact once a lead has been silent this long. WhatsApp's
+    #: marketing rules forbid templating long-dormant contacts. 0 disables it.
+    sales_max_silence_days: int = 30
 
     # ------------------------------------------------------------------
     # Workers

@@ -409,6 +409,7 @@ async def messaging_state(
         human_takeover=bool(lead.human_takeover),
         last_inbound_at=lead.last_inbound_at,
         last_outbound_at=lead.last_outbound_at,
+        opt_in_at=lead.opt_in_at,
         lead_timezone=lead.timezone,
         sent_today=sent_today,
         sent_total=sent_total,

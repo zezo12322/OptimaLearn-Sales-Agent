@@ -31,6 +31,7 @@ CONFIG = MessagingPolicyConfig(
     default_timezone="Africa/Cairo",
     max_per_lead_per_day=1,
     max_per_lead_total=5,
+    max_silence_days=30,
 )
 
 #: 13:00 in Cairo (UTC+2/+3) — comfortably outside quiet hours all year.
@@ -252,3 +253,66 @@ class TestOptOutDetection:
     @pytest.mark.parametrize("message", ["start", "اشتراك", "ابدأ", "موافق"])
     def test_opt_in_keywords(self, message: str) -> None:
         assert detect_opt_in(message) is True
+
+
+class TestDormantLeads:
+    """A lead who has gone quiet for a month stops being a lead.
+
+    WhatsApp's marketing rules forbid templating long-dormant contacts, and
+    dormant contacts are where spam reports come from — which is what downgrades
+    a number's quality rating. So this is a DENY: waiting longer only makes a
+    stale contact staler, which is why it is not a DEFER.
+    """
+
+    def test_silent_for_a_month_is_denied(self) -> None:
+        cold = state(last_inbound_at=MIDDAY_UTC - timedelta(days=31))
+        verdict = evaluate_outbound(cold, CONFIG, MIDDAY_UTC)
+        assert verdict.decision is Decision.DENY
+        assert verdict.reason == "LEAD_DORMANT"
+
+    def test_just_inside_the_window_is_allowed(self) -> None:
+        warm = state(last_inbound_at=MIDDAY_UTC - timedelta(days=29))
+        verdict = evaluate_outbound(warm, CONFIG, MIDDAY_UTC)
+        assert verdict.decision is not Decision.DENY
+
+    def test_a_recent_opt_in_counts_as_engagement(self) -> None:
+        """A form submitted yesterday is a live lead even with no inbound message."""
+        fresh_form = state(
+            last_inbound_at=None,
+            opt_in_at=MIDDAY_UTC - timedelta(days=1),
+        )
+        verdict = evaluate_outbound(fresh_form, CONFIG, MIDDAY_UTC)
+        assert verdict.decision is not Decision.DENY
+
+    def test_an_old_opt_in_is_dormant(self) -> None:
+        stale_form = state(
+            last_inbound_at=None,
+            opt_in_at=MIDDAY_UTC - timedelta(days=90),
+        )
+        verdict = evaluate_outbound(stale_form, CONFIG, MIDDAY_UTC)
+        assert verdict.reason == "LEAD_DORMANT"
+
+    def test_our_own_messages_do_not_count_as_engagement(self) -> None:
+        """Otherwise a cadence keeps itself alive by talking to a silent lead."""
+        cold = state(
+            last_inbound_at=MIDDAY_UTC - timedelta(days=60),
+            last_outbound_at=MIDDAY_UTC - timedelta(hours=1),
+        )
+        verdict = evaluate_outbound(cold, CONFIG, MIDDAY_UTC)
+        assert verdict.reason == "LEAD_DORMANT"
+
+    def test_opt_out_still_outranks_dormancy(self) -> None:
+        """The recorded reason must always be the most fundamental one."""
+        cold_and_out = state(
+            opted_out=True, last_inbound_at=MIDDAY_UTC - timedelta(days=60)
+        )
+        verdict = evaluate_outbound(cold_and_out, CONFIG, MIDDAY_UTC)
+        assert verdict.reason == "OPTED_OUT"
+
+    def test_the_rule_can_be_switched_off(self) -> None:
+        import dataclasses
+
+        disabled = dataclasses.replace(CONFIG, max_silence_days=0)
+        cold = state(last_inbound_at=MIDDAY_UTC - timedelta(days=365))
+        verdict = evaluate_outbound(cold, disabled, MIDDAY_UTC)
+        assert verdict.decision is not Decision.DENY

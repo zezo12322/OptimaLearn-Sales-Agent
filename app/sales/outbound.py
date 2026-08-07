@@ -72,6 +72,7 @@ def policy_config() -> MessagingPolicyConfig:
         default_timezone=settings.sales_default_timezone,
         max_per_lead_per_day=settings.sales_max_outbound_per_lead_per_day,
         max_per_lead_total=settings.sales_max_outbound_per_lead_total,
+        max_silence_days=settings.sales_max_silence_days,
     )
 
 

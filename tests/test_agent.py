@@ -589,3 +589,45 @@ class TestLeadSummary:
             lead, score_lead(signals_from_lead(lead))
         )
         assert "leadership training" in summary
+
+
+class TestPromptScope:
+    """The agent must read as task-specific, not as a general assistant.
+
+    This is a compliance requirement, not a style preference: WhatsApp Business
+    policy requires a bot scoped to a defined purpose, and a number that answers
+    anything at all can be treated as a general-purpose chatbot — which puts the
+    number the whole channel depends on at risk. So the boundary is asserted,
+    not left to whoever edits the prompt next.
+    """
+
+    def _prompt(self) -> str:
+        from app.sales.enums import Channel
+        from app.sales.prompts import PromptContext, build_system_prompt
+
+        return build_system_prompt(
+            PromptContext(
+                company_name="Optimatech",
+                agent_name="Nour",
+                channel=Channel.WHATSAPP,
+                locale="ar",
+                today="2026-08-07",
+                lead_summary="- Name: unknown",
+                next_question_hint=None,
+                can_book_calls=True,
+            )
+        )
+
+    def test_scope_boundary_is_stated(self) -> None:
+        prompt = self._prompt()
+        assert "WHAT YOU ARE FOR" in prompt
+
+    def test_off_topic_categories_are_named(self) -> None:
+        """Naming the categories works better than a vague "stay on topic"."""
+        prompt = self._prompt().lower()
+        for category in ("general knowledge", "homework", "translation", "politics"):
+            assert category in prompt, category
+
+    def test_small_talk_is_explicitly_allowed(self) -> None:
+        """A bot that refuses "how are you" is worse than one that answers it."""
+        assert "small talk" in self._prompt().lower()

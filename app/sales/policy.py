@@ -71,6 +71,11 @@ class MessagingPolicyConfig:
     default_timezone: str = "Africa/Cairo"
     max_per_lead_per_day: int = 1
     max_per_lead_total: int = 5
+    #: Stop contacting a lead who has been silent this long. WhatsApp's marketing
+    #: rules forbid templates to long-dormant contacts, and dormant contacts are
+    #: where spam reports come from — which is what downgrades a number's quality
+    #: rating. 0 disables the rule.
+    max_silence_days: int = 30
 
 
 @dataclass(frozen=True)
@@ -84,6 +89,10 @@ class LeadMessagingState:
     human_takeover: bool = False
     last_inbound_at: Optional[datetime] = None
     last_outbound_at: Optional[datetime] = None
+    #: When they opted in. Carried separately because a lead who submitted a form
+    #: and never wrote has consent but no inbound message, and a form filled in
+    #: three months ago is exactly the stale contact we must not template.
+    opt_in_at: Optional[datetime] = None
     lead_timezone: Optional[str] = None
     #: Proactive messages already sent today (lead-local day) and ever.
     sent_today: int = 0
@@ -148,6 +157,24 @@ def _next_local_midnight(now: datetime, zone: ZoneInfo) -> datetime:
     return tomorrow.astimezone(timezone.utc)
 
 
+def _aware(value: Optional[datetime]) -> Optional[datetime]:
+    if value is None:
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _last_engagement(state: LeadMessagingState) -> Optional[datetime]:
+    """The most recent thing the *lead* did: wrote to us, or opted in.
+
+    Deliberately ignores ``last_outbound_at`` — us messaging them is not a sign
+    of life, and counting it would let a cadence keep itself alive forever.
+    """
+    candidates = [
+        d for d in (_aware(state.last_inbound_at), _aware(state.opt_in_at)) if d
+    ]
+    return max(candidates) if candidates else None
+
+
 def service_window_open(
     state: LeadMessagingState, config: MessagingPolicyConfig, now: datetime
 ) -> bool:
@@ -203,6 +230,25 @@ def evaluate_outbound(
             "NO_CONSENT",
             "No inbound message and no opt-in — cold messaging is not allowed.",
         )
+
+    # Dormant contact. Consent does not expire on paper, but interest does, and
+    # WhatsApp's marketing rules forbid templating a long-silent contact. This is
+    # a DENY, not a DEFER: waiting longer makes a stale contact staler.
+    if config.max_silence_days:
+        since = _last_engagement(state)
+        # Fires on evidence of dormancy, not on the absence of a timestamp. Every
+        # code path that grants consent also stamps opt_in_at, so a consenting
+        # lead with no timestamp at all did not come from this application, and
+        # inventing dormancy for it would block a legitimate send on no evidence.
+        if since is not None and now - since >= timedelta(
+            days=config.max_silence_days
+        ):
+            return PolicyVerdict(
+                Decision.DENY,
+                "LEAD_DORMANT",
+                f"No sign of life for {config.max_silence_days}+ days; "
+                "messaging a dormant contact is what earns spam reports.",
+            )
 
     if config.max_per_lead_total and state.sent_total >= config.max_per_lead_total:
         return PolicyVerdict(
