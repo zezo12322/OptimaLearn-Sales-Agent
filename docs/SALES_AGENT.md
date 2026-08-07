@@ -96,6 +96,10 @@ psql "$SYNC_DATABASE_URL" -f supabase/rls_policies.sql
 
 > ⚠️ المشروع فيه بيانات حقيقية (`bookings`, `orders`). راجع الـ migration قبل ما تشغّله، وخُد backup.
 
+> ✅ **الخطوتين دول اتنفّذوا على مشروع `optimatech` (ref `cvxpphbjayaxifqtxyub`) بتاريخ 2026-08-07**، كـ Supabase migrations باسم `sales_agent_initial_schema` و`sales_agent_rls_policies`. جدول `alembic_version` مختوم على `0001_initial`، فـ `alembic upgrade head` على المشروع ده مش هيعمل حاجة. **متشغّلهمش بإيدك تاني** — الخطوات فوق للبيئات الجديدة.
+>
+> `vector` مثبّتة في `public` مش `extensions`، عن قصد: الـ agent بيوصّل بـ SQLAlchemy، ولو الـ extension في schema تانية يبقى نوع `VECTOR` وopclass `vector_cosine_ops` معتمدين على إن `search_path` بتاع الـ role اللي بيوصّل فيه `extensions`. `btree_gist` أصلًا في `public` في نفس المشروع، فده متسق. الـ linter بيطلّع WARN على الحالة دي — متوقّع ومقبول.
+
 ### 4.2 المتغيرات في الوكيل
 
 ```
