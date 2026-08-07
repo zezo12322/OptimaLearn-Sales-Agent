@@ -1,6 +1,6 @@
-# دليل تشغيل وكيل المبيعات
+# دليل تشغيل وكيل مبيعات Optimatech
 
-الدليل ده بيغطي الإعداد من الصفر: تطبيق Meta، الـ webhooks، القوالب، ربط الـ LMS، والتشغيل اليومي.
+الدليل ده بيغطي الإعداد من الصفر: تطبيق Meta، الـ webhooks، القوالب، ربط الموقع وقاعدة البيانات، والتشغيل اليومي.
 
 ---
 
@@ -69,33 +69,64 @@
 
 ---
 
-## 4. ربط الـ LMS
+## 4. ربط الموقع وقاعدة البيانات
 
-### 4.1 المتغيرات في الوكيل
-```
-LMS_API_BASE_URL=https://api.example.com/api/v1
-LMS_INTERNAL_API_KEY=<نفس القيمة اللي في الـ LMS>
-SALES_WEB_BASE_URL=https://app.example.com
-```
+### 4.1 قاعدة البيانات — نفس مشروع Supabase بتاع الموقع
 
-الوكيل بيقرأ اتنين endpoints:
-- `GET /catalog/courses` — عام، للكتالوج.
-- `GET /sales/internal/pricing` — محمي بـ `X-Internal-Api-Key`، للباقات.
+جداول الوكيل (`sales_*`) بتقعد جانب `bookings` و`orders` في نفس المشروع. السبب مش توفير: لوحة الـ CRM جوه `/admin` بتقرا العملاء بنفس الـ browser client اللي بيقرا الحجوزات، ومفيش قاعدة تانية ولا تسجيل دخول تاني.
 
-### 4.2 المتغيرات في الـ LMS (NestJS)
 ```
-SALES_AGENT_URL=https://sales-agent.example.com
-SALES_AGENT_INTERNAL_API_KEY=<نفس INTERNAL_API_KEY في الوكيل>
-SALES_INTERNAL_API_KEY=<نفس LMS_INTERNAL_API_KEY في الوكيل>
+DATABASE_URL=postgresql+asyncpg://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
+SYNC_DATABASE_URL=postgresql+psycopg2://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
 ```
 
-⚠️ **مفتاحين مختلفين، وكل واحد في اتجاه:**
-- `INTERNAL_API_KEY` (في الوكيل) = `SALES_AGENT_INTERNAL_API_KEY` (في الـ LMS) → الـ LMS بينده الوكيل.
-- `LMS_INTERNAL_API_KEY` (في الوكيل) = `SALES_INTERNAL_API_KEY` (في الـ LMS) → الوكيل بينده الـ LMS.
+الـ pooler (`6543`) للـ API، والاتصال المباشر (`5432`) للـ migrations — الـ pooler في وضع transaction مبيدعمش الـ DDL كله.
 
-خلطهم يخلّي اتجاه واحد يشتغل والتاني يرجّع 401.
+**الترتيب مهم:**
 
----
+```bash
+# 1) الـ schema
+alembic upgrade head
+
+# 2) صلاحيات القراءة للـ admin (Supabase فقط)
+psql "$SYNC_DATABASE_URL" -f supabase/rls_policies.sql
+```
+
+الملف التاني مفصول عن الـ migration عن قصد: `is_admin()` دالة موجودة في مشروعكم تحديدًا، فحقنها في migration بتاع Alembic كان هيربط الـ schema بـ Supabase وخلاص. الـ migration يفضل محمول، والحاجة الخاصة بـ Supabase تبقى ظاهرة وقابلة للمراجعة.
+
+> ⚠️ المشروع فيه بيانات حقيقية (`bookings`, `orders`). راجع الـ migration قبل ما تشغّله، وخُد backup.
+
+### 4.2 المتغيرات في الوكيل
+
+```
+SITE_BASE_URL=https://www.digitaloptima.tech
+SITE_API_BASE_URL=https://www.digitaloptima.tech
+SITE_INTERNAL_API_KEY=<نفس القيمة اللي في الموقع>
+```
+
+### 4.3 المتغير في الموقع
+
+```
+SALES_AGENT_INTERNAL_KEY=<نفس SITE_INTERNAL_API_KEY>
+```
+
+من غيره الـ `/api/internal/booking/*` بيرجّع **503** والوكيل يرجع يبعت لينك حجز بدل ما يحجز — أداء أقل، بس **مستحيل يقول ميعاد غلط**.
+
+### 4.4 اللي الوكيل بيندهه على الموقع
+
+| Endpoint | بيلفّ إيه |
+|---|---|
+| `GET /api/internal/booking/slots?type=&date=` | `getAvailableSlots` ليوم واحد |
+| `GET /api/internal/booking/days?type=&days=` | نفسها يوم بيوم، بترجّع أول أيام فيها مواعيد |
+| `POST /api/internal/booking/create` | `submitBooking` — بيتأكد من الميعاد تاني قبل التثبيت |
+
+الوكيل **مبيحسبش المواعيد**. الموقع بيحسب التوفر − المحجوز − تعارضات Google Calendar، وبيعمل Meet link ويبعت الإيميلين. التأكيد التاني في `create` هو اللي يمنع الحجز المزدوج لو الفورم العام خد الميعاد وسط المحادثة.
+
+### 4.5 الأسعار
+
+الباقات مكتوبة في `app/sales/offerings.py`، متطابقة مع `lib/services.ts` في الموقع. مش بتتجاب عبر HTTP: الوكيل لازم يجاوب "الموقع بكام؟" وقت ما الموقع نفسه بيتنشر، وأربع صفوف بيتغيروا مرتين في السنة مش بيستاهلوا اعتماد شبكة في كل محادثة.
+
+المقابل إن الليستتين ممكن يفرقوا، وعشان كده فيه `verify_against_site()` — لو غيّرت سعر على الموقع، شغّلها وهي تقولك الفرق.
 
 ## 5. أول تشغيل
 
