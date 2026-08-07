@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # Fake values so settings validate. No test reaches the network: the
+      # providers, the model and the LMS are all injected or monkeypatched.
+      INTERNAL_API_KEY: ci-internal-key
+      DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/ci
+      SYNC_DATABASE_URL: postgresql+psycopg2://ci:ci@localhost:5432/ci
+      REDIS_URL: redis://localhost:6379/0
+      AZURE_OPENAI_API_KEY: ci-key
+      AZURE_OPENAI_ENDPOINT: https://ci.openai.azure.com/
+      AZURE_OPENAI_API_VERSION: "2024-10-21"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Tests
+        run: uv run pytest -q
+
+      # The migration is hand-written, so this is the check that it still matches
+      # the models. Offline mode renders the DDL without needing a database.
+      - name: Migration renders
+        run: uv run alembic upgrade head --sql > /dev/null
+
+      - name: App builds and every route registers
+        run: uv run python -c "from app.main import app; assert len(app.openapi()['paths']) >= 20"
