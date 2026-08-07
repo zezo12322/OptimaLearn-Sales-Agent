@@ -152,9 +152,10 @@ class Lead(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    #: Firebase uid once the prospect becomes an LMS user — the join that makes
-    #: closed-loop reporting (and the upsell path) possible.
-    lms_user_id: Mapped[Optional[str]] = mapped_column(
+    #: Set once the prospect becomes a paying client — the customer e-mail on
+    #: their order, or another stable reference. This is the join that makes
+    #: closed-loop reporting (and the cross-sell path) possible.
+    client_ref: Mapped[Optional[str]] = mapped_column(
         String, nullable=True, index=True
     )
 
@@ -327,7 +328,8 @@ class LeadEvent(Base):
         index=True,
     )
     event_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    #: Who caused it: "agent", "system", or an LMS uid for human actions.
+    #: Who caused it: "agent", "system", or a colleague's identifier for human
+    #: actions.
     actor: Mapped[str] = mapped_column(String, default="agent", nullable=False)
     payload: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -607,17 +609,26 @@ class UpsellRecommendation(Base):
 
     __tablename__ = "sales_upsell_recommendations"
     __table_args__ = (
-        Index("ix_sales_upsell_user_created", "tenant_id", "lms_user_id", "created_at"),
+        Index(
+            "ix_sales_upsell_client_created", "tenant_id", "client_ref", "created_at"
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
-    lms_user_id: Mapped[str] = mapped_column(String, nullable=False)
+    client_ref: Mapped[str] = mapped_column(String, nullable=False)
 
-    recommended_tier_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    recommended_tier_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    #: The package suggested — a slug from `app.sales.offerings`, and its title in
+    #: the client's locale at the time (kept so an old recommendation still reads
+    #: correctly after the catalogue is renamed).
+    recommended_service_slug: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True
+    )
+    recommended_service_title: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True
+    )
     #: Machine-readable trigger ("HIT_FREE_LIMIT", "HIGH_COMPLETION", ...).
     reason_code: Mapped[str] = mapped_column(String(32), nullable=False)
     #: The copy shown to the user, in their locale.

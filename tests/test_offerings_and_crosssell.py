@@ -308,3 +308,109 @@ class TestSeedData:
         for sequence in seed.STARTER_SEQUENCES:
             delays = [float(step["delay_hours"]) for step in sequence["steps"]]
             assert delays == sorted(delays)
+
+
+class TestUpsellRoute:
+    """The /upsell/recommend wiring.
+
+    These exist because the route was dead for a while and nothing noticed: the
+    handler built a dataclass that a refactor had renamed, so every call raised
+    AttributeError. Unit tests on `choose_next_service` passed the whole time —
+    they never went through the handler. So the assertions here are deliberately
+    about the *seam* between the request schema, the handler, and the dataclass,
+    not about recommendation quality.
+    """
+
+    def test_request_schema_matches_the_signals_dataclass(self) -> None:
+        """Every UpsellIn field must land somewhere on ClientSignals.
+
+        `tenant_id` is routing, not a signal, so it is the one exception.
+        """
+        import dataclasses
+
+        from app.schemas.sales import UpsellIn
+
+        signal_fields = {f.name for f in dataclasses.fields(ClientSignals)}
+        payload_fields = set(UpsellIn.model_fields) - {"tenant_id"}
+        assert payload_fields <= signal_fields, payload_fields - signal_fields
+
+    @pytest.mark.asyncio
+    async def test_handler_builds_signals_and_returns_silence(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A client with nothing delivered gets no pitch — and no exception."""
+        from app.routers import admin
+        from app.schemas.sales import UpsellIn
+
+        captured: dict[str, object] = {}
+
+        async def fake_recommend(db, tenant_id, signals, force=False):  # type: ignore[no-untyped-def]
+            captured["signals"] = signals
+            return None
+
+        monkeypatch.setattr(admin.upsell, "recommend", fake_recommend)
+
+        result = await admin.recommend_upsell(
+            UpsellIn(
+                client_ref="client@example.com",
+                purchased_slugs=["marketing-site"],
+                latest_delivered=False,
+            ),
+            db=_StubSession(),
+        )
+
+        assert result.recommendation is None
+        signals = captured["signals"]
+        assert isinstance(signals, ClientSignals)
+        assert signals.client_ref == "client@example.com"
+        assert signals.purchased_slugs == ["marketing-site"]
+        assert signals.latest_delivered is False
+
+    @pytest.mark.asyncio
+    async def test_handler_returns_the_payload_when_there_is_one(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The wire shape stays service_slug/service_title, not the column names."""
+        import uuid as _uuid
+        from datetime import datetime, timezone
+
+        from app.core.config import settings
+        from app.models.sales import UpsellRecommendation
+        from app.routers import admin
+        from app.schemas.sales import UpsellIn
+
+        # Without a site base URL the links are correctly None, so set one — the
+        # point of this test is that the slug reaches the link.
+        monkeypatch.setattr(settings, "site_base_url", "https://optimatech.test")
+
+        recommendation = UpsellRecommendation(
+            id=_uuid.uuid4(),
+            tenant_id=_uuid.uuid4(),
+            client_ref="client@example.com",
+            recommended_service_slug="cms-dashboard",
+            recommended_service_title="لوحة تحكم + CMS مخصص",
+            reason_code="NATURAL_NEXT_STEP",
+            pitch="…",
+            locale="ar",
+            created_at=datetime.now(timezone.utc),
+        )
+
+        async def fake_recommend(db, tenant_id, signals, force=False):  # type: ignore[no-untyped-def]
+            return recommendation
+
+        monkeypatch.setattr(admin.upsell, "recommend", fake_recommend)
+
+        result = await admin.recommend_upsell(
+            UpsellIn(client_ref="client@example.com"), db=_StubSession()
+        )
+
+        assert result.recommendation is not None
+        assert result.recommendation["service_slug"] == "cms-dashboard"
+        assert "cms-dashboard" in result.recommendation["checkout_url"]
+
+
+class _StubSession:
+    """Just enough AsyncSession for a handler that only commits."""
+
+    async def commit(self) -> None:
+        return None

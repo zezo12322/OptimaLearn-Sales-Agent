@@ -4,11 +4,13 @@ Two surfaces with very different threat models, so they are separate routers:
 
 * ``/v1/sales/webhooks/*`` — public, authenticated by Meta's HMAC signature.
 * ``/v1/sales/*`` — internal, authenticated by a shared secret, called only by
-  the LMS backend.
+  trusted server-side callers.
 
-No CORS middleware on purpose. Nothing here is called from a browser: the web CRM
-goes through the LMS, which holds the shared secret. Adding CORS would only make
-it possible to leak that boundary.
+No CORS middleware on purpose. Nothing here is called from a browser. The CRM in
+the Optimatech site's ``/admin`` reads the sales tables straight from Supabase
+under RLS, and anything that has to go *through* this API (sending a message,
+for instance) belongs in a server action that holds the shared secret. Adding
+CORS would only make it possible to leak that secret to a browser.
 """
 
 import logging

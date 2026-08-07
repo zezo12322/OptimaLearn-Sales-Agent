@@ -5,7 +5,7 @@ Settings are validated at import, so the environment has to exist before any
 the only place the defaults can be set.
 
 Credentials here are deliberately fake. No test in this suite reaches the network:
-the units that would (providers, the model, the LMS) are injected or monkeypatched.
+the units that would (providers, the model, the site) are injected or monkeypatched.
 """
 
 import os

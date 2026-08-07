@@ -1,8 +1,9 @@
 """Internal API authentication.
 
-A shared secret rather than JWTs: the only callers are the LMS backend and our
-own admin UI proxying through it. No end user ever reaches these endpoints
-directly, so a rotatable header secret is the right amount of machinery.
+A shared secret rather than JWTs: every caller is a trusted server — a server
+action in the Optimatech site, or an operator holding the key. No end user ever
+reaches these endpoints directly, so a rotatable header secret is the right
+amount of machinery.
 
 The comparison is constant-time. A naive ``!=`` on a secret leaks its prefix to
 anyone willing to time the responses.

@@ -1,10 +1,13 @@
 """Admin / internal API.
 
-Consumed by the LMS backend, which re-exposes it to the web CRM behind Firebase
-auth and an admin role. Nothing here is reachable by an end user, which is why a
-shared secret is enough — but it is still the surface that can send messages on
-the company's behalf, so every write is recorded on the lead timeline with an
-actor.
+Consumed by trusted server-side callers — a server action in the Optimatech site,
+or an operator with the key. Never a browser: the CRM's *reads* come from Supabase
+under RLS, so this API exists for the things a Supabase write cannot do, chiefly
+sending a message.
+
+Nothing here is reachable by an end user, which is why a shared secret is enough
+— but it is still the surface that can send messages on the company's behalf, so
+every write is recorded on the lead timeline with an actor.
 """
 
 import logging
@@ -720,16 +723,13 @@ async def preview_chat(
 async def recommend_upsell(
     payload: UpsellIn, db: AsyncSession = Depends(get_db)
 ) -> UpsellOut:
-    signals = upsell.UsageSignals(
-        lms_user_id=payload.lms_user_id,
+    signals = upsell.ClientSignals(
+        client_ref=payload.client_ref,
         locale=payload.locale,
-        current_plan=payload.current_plan,
-        enrolled_courses=payload.enrolled_courses,
-        completed_courses=payload.completed_courses,
-        completed_lectures=payload.completed_lectures,
-        quiz_pass_rate=payload.quiz_pass_rate,
-        days_active=payload.days_active,
-        hit_limit=payload.hit_limit,
+        purchased_slugs=list(payload.purchased_slugs),
+        latest_delivered=payload.latest_delivered,
+        days_since_last_purchase=payload.days_since_last_purchase,
+        asked_about_slug=payload.asked_about_slug,
     )
     recommendation = await upsell.recommend(db, _tenant(payload.tenant_id), signals)
     await db.commit()

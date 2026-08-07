@@ -134,7 +134,7 @@ async def _recent_recommendation(
         select(UpsellRecommendation)
         .where(
             UpsellRecommendation.tenant_id == tenant_id,
-            UpsellRecommendation.lms_user_id == client_ref,
+            UpsellRecommendation.client_ref == client_ref,
             UpsellRecommendation.created_at >= cutoff,
         )
         .order_by(UpsellRecommendation.created_at.desc())
@@ -194,9 +194,9 @@ async def recommend(
 
     recommendation = UpsellRecommendation(
         tenant_id=tenant_id,
-        lms_user_id=signals.client_ref,
-        recommended_tier_id=service.slug,
-        recommended_tier_name=service.title(locale),
+        client_ref=signals.client_ref,
+        recommended_service_slug=service.slug,
+        recommended_service_title=service.title(locale),
         reason_code=REASON_NEXT_STEP,
         pitch=pitch,
         locale=locale,
@@ -237,13 +237,13 @@ def to_payload(recommendation: UpsellRecommendation) -> dict[str, Any]:
     locale = recommendation.locale or "ar"
     return {
         "id": str(recommendation.id),
-        "service_slug": recommendation.recommended_tier_id,
-        "service_title": recommendation.recommended_tier_name,
+        "service_slug": recommendation.recommended_service_slug,
+        "service_title": recommendation.recommended_service_title,
         "reason_code": recommendation.reason_code,
         "pitch": recommendation.pitch,
         "locale": locale,
         "checkout_url": offerings.checkout_url(
-            locale, recommendation.recommended_tier_id or None
+            locale, recommendation.recommended_service_slug or None
         ),
         "booking_url": offerings.booking_url(locale, "consultation"),
         "created_at": recommendation.created_at.isoformat()

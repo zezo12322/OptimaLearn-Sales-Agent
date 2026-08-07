@@ -65,7 +65,7 @@ def upgrade() -> None:
         sa.Column("opt_out_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_inbound_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_outbound_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("lms_user_id", sa.String(), nullable=True),
+        sa.Column("client_ref", sa.String(), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column(
             "created_at",
@@ -82,7 +82,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_sales_leads_tenant_id", "sales_leads", ["tenant_id"])
-    op.create_index("ix_sales_leads_lms_user_id", "sales_leads", ["lms_user_id"])
+    op.create_index("ix_sales_leads_client_ref", "sales_leads", ["client_ref"])
     op.create_index(
         "ix_sales_leads_tenant_stage", "sales_leads", ["tenant_id", "stage"]
     )
@@ -478,9 +478,9 @@ def upgrade() -> None:
         "sales_upsell_recommendations",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("lms_user_id", sa.String(), nullable=False),
-        sa.Column("recommended_tier_id", sa.String(), nullable=True),
-        sa.Column("recommended_tier_name", sa.String(), nullable=True),
+        sa.Column("client_ref", sa.String(), nullable=False),
+        sa.Column("recommended_service_slug", sa.String(), nullable=True),
+        sa.Column("recommended_service_title", sa.String(), nullable=True),
         sa.Column("reason_code", sa.String(length=32), nullable=False),
         sa.Column("pitch", sa.Text(), nullable=False),
         sa.Column("locale", sa.String(length=8), nullable=False),
@@ -502,9 +502,9 @@ def upgrade() -> None:
         ["tenant_id"],
     )
     op.create_index(
-        "ix_sales_upsell_user_created",
+        "ix_sales_upsell_client_created",
         "sales_upsell_recommendations",
-        ["tenant_id", "lms_user_id", "created_at"],
+        ["tenant_id", "client_ref", "created_at"],
     )
 
 

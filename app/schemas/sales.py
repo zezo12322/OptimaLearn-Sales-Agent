@@ -1,6 +1,6 @@
 """Request and response bodies for the admin/internal API.
 
-Field names are snake_case on the wire; the LMS proxy maps them for the web app.
+Field names are snake_case on the wire, matching the columns they map to.
 Validation is strict where a bad value would be expensive — stage and outcome
 are enums, message bodies are length-bounded — and permissive where the caller
 is a trusted service.
@@ -158,7 +158,7 @@ class LeadPatch(BaseModel):
 class HumanMessageIn(BaseModel):
     text: str = Field(min_length=1, max_length=4000)
     channel: Optional[Channel] = None
-    #: LMS uid of the person sending, recorded on the timeline.
+    #: Identifier of the colleague sending it, recorded on the timeline.
     actor: str = Field(default="human", max_length=200)
     #: Sending as a human takes the thread over by default, so the agent stops
     #: talking over the colleague who just joined.
@@ -197,15 +197,23 @@ class PreviewChatOut(BaseModel):
 # Upsell
 # ----------------------------------------------------------------------
 class UpsellIn(BaseModel):
-    lms_user_id: str = Field(min_length=1, max_length=200)
+    """What the caller knows about an existing client, for a cross-sell decision.
+
+    Mirrors `upsell.ClientSignals`. Every field except `client_ref` has a default
+    that makes the recommender *decline*, so a caller that omits something gets
+    silence rather than a badly-grounded pitch at a paying client.
+    """
+
+    #: Stable client reference — the customer e-mail on their order, or the lead id.
+    client_ref: str = Field(min_length=1, max_length=200)
     locale: str = Field(default="ar", max_length=8)
-    current_plan: Optional[str] = Field(default=None, max_length=200)
-    enrolled_courses: int = Field(default=0, ge=0)
-    completed_courses: int = Field(default=0, ge=0)
-    completed_lectures: int = Field(default=0, ge=0)
-    quiz_pass_rate: Optional[float] = Field(default=None, ge=0, le=1)
-    days_active: int = Field(default=0, ge=0)
-    hit_limit: bool = False
+    #: Package slugs the client has already paid for.
+    purchased_slugs: list[str] = Field(default_factory=list, max_length=50)
+    #: Whether the most recent purchase has actually been handed over.
+    latest_delivered: bool = False
+    days_since_last_purchase: int = Field(default=0, ge=0)
+    #: Set when the client themselves asked about another package.
+    asked_about_slug: Optional[str] = Field(default=None, max_length=64)
     tenant_id: Optional[uuid.UUID] = None
 
 
