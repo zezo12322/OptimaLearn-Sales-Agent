@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Fake values so settings validate. No test reaches the network: the
-      # providers, the model and the LMS are all injected or monkeypatched.
+      # providers, the model and the site are all injected or monkeypatched.
       INTERNAL_API_KEY: ci-internal-key
       DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/ci
       SYNC_DATABASE_URL: postgresql+psycopg2://ci:ci@localhost:5432/ci
@@ -39,5 +39,9 @@ jobs:
       - name: Migration renders
         run: uv run alembic upgrade head --sql > /dev/null
 
-      - name: App builds and every route registers
-        run: uv run python -c "from app.main import app; assert len(app.openapi()['paths']) >= 20"
+      # Outside pytest on purpose: conftest.py fills in environment defaults, so
+      # a green suite does not prove the app starts on the variables above.
+      - name: App builds and the critical routes register
+        # -m, not a file path: running the file would put scripts/ on sys.path
+        # instead of the repo root, and `app` would not import.
+        run: uv run python -m scripts.check_app_routes
