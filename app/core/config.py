@@ -47,10 +47,8 @@ class Settings(BaseSettings):
     sales_agent_enabled: bool = True
     default_tenant_id: uuid.UUID = DEFAULT_TENANT_ID
 
-    sales_company_name: str = "OptimaLearn"
+    sales_company_name: str = "Optimatech"
     sales_agent_display_name: str = "Nour"
-    #: Booking page the agent links to for demos.
-    sales_booking_url: str | None = None
     #: Where handoff notifications go. Empty disables notification.
     sales_handoff_notify_email: str | None = None
 
@@ -61,27 +59,25 @@ class Settings(BaseSettings):
     sales_history_messages: int = 12
     sales_kb_top_k: int = 6
     sales_kb_min_similarity: float = 0.20
-    #: Days before the same learner may be shown another upgrade suggestion.
-    sales_upsell_cooldown_days: int = 7
-    #: Standing volume discounts for team quotes, as ``{min_seats: fraction}``
-    #: e.g. ``{"25": 0.1, "100": 0.2}``. Empty means list price only — anything
-    #: beyond a published band is escalated to a human, never improvised.
-    sales_volume_discount_bands: dict[int, float] = {}
+    #: Days before the same client may be shown another cross-sell suggestion.
+    sales_upsell_cooldown_days: int = 30
+    #: Quiet period after a delivery before suggesting the next service. Selling
+    #: the next thing while the current thing is still settling reads as
+    #: revenue-chasing, and it is the fastest way to lose a client's trust.
+    cross_sell_min_days_after_delivery: int = 14
 
     # ------------------------------------------------------------------
-    # LMS lookups (live catalogue and pricing)
+    # Optimatech site integration
     # ------------------------------------------------------------------
-    #: NestJS API root, including the version prefix, e.g.
-    #: ``https://api.example.com/api/v1``.
-    lms_api_base_url: str | None = None
-    #: Shared secret for the LMS endpoints reserved for service-to-service calls.
-    lms_internal_api_key: str | None = None
-    #: Public site root, used to build the course/pricing/signup links the agent
-    #: sends. A prospect has no session yet, so the agent links into the funnel
-    #: rather than minting a checkout it cannot authenticate.
-    sales_web_base_url: str | None = None
-    #: Seconds to wait on an LMS lookup before answering without it.
-    lms_request_timeout_seconds: float = 8.0
+    #: Marketing-site origin, used to build /book, /checkout and pricing links.
+    site_base_url: str | None = None
+    #: Same origin normally; separate so the internal API can sit behind a
+    #: different hostname than the public site if it ever needs to.
+    site_api_base_url: str | None = None
+    #: Shared secret for the site's /api/internal/* endpoints (booking slots and
+    #: creation). Without it the agent shares a booking link instead of booking.
+    site_internal_api_key: str | None = None
+    site_request_timeout_seconds: float = 10.0
 
     # ------------------------------------------------------------------
     # Meta platform

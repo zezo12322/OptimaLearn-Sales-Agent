@@ -151,8 +151,9 @@ class TestSaveLeadDetails:
                 "phone": "0100 123 4567",
                 "email": "Zeyad@Example.com",
                 "segment": "B2B",
-                "need": "تدريب 30 موظف",
-                "seats": "about 30",
+                "need": "عايز موقع للشركة",
+                "org_type": "smb",
+                "current_solution": "صفحة فيسبوك بس",
                 "timeline": "immediate",
                 "authority": "decision_maker",
             },
@@ -161,7 +162,8 @@ class TestSaveLeadDetails:
         assert lead.phone_e164 == "+201001234567"
         assert lead.email == "zeyad@example.com"
         assert lead.segment == "B2B"
-        assert lead.qualification["seats"] == 30
+        assert lead.qualification["org_type"] == "SMB"
+        assert lead.qualification["current_solution"] == "صفحة فيسبوك بس"
         assert lead.qualification["timeline"] == "IMMEDIATE"
         assert lead.qualification["authority"] == "DECISION_MAKER"
         assert result["saved"]
@@ -236,7 +238,7 @@ class TestSaveLeadDetails:
         assert "error" in await execute_tool(ctx, "definitely_not_a_tool", {})
 
 
-class TestHandoffAndDemo:
+class TestHandoffAndBooking:
     async def test_handoff_is_recorded_on_the_context(self) -> None:
         lead = make_lead()
         ctx = SalesToolContext(
@@ -245,32 +247,139 @@ class TestHandoffAndDemo:
         await execute_tool(
             ctx,
             "request_human_handoff",
-            {"reason": "DISCOUNT_REQUEST", "urgency": "HIGH", "summary": "wants 30% off"},
+            {"reason": "CUSTOM_QUOTE", "urgency": "HIGH", "summary": "wants a big build"},
         )
         assert ctx.handoff is not None
-        assert ctx.handoff["reason"] == "DISCOUNT_REQUEST"
+        assert ctx.handoff["reason"] == "CUSTOM_QUOTE"
         assert ctx.handoff["urgency"] == "HIGH"
 
-    async def test_demo_defaults_the_contact_method_to_the_channel(self) -> None:
-        lead = make_lead()
-        ctx = SalesToolContext(
-            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
-        )
-        await execute_tool(
-            ctx, "book_demo", {"preferred_time": "بكرة الصبح", "contact_method": "junk"}
-        )
-        assert ctx.demo is not None
-        assert ctx.demo["contact_method"] == "WHATSAPP"
-
-    async def test_demo_warns_when_we_have_no_way_to_reach_them(self) -> None:
+    async def test_booking_refuses_to_proceed_with_missing_details(self) -> None:
+        """A placeholder booking sends a real calendar invite to a real person."""
         lead = make_lead()
         ctx = SalesToolContext(
             db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
         )
         result = await execute_tool(
-            ctx, "book_demo", {"preferred_time": "الخميس", "contact_method": "PHONE"}
+            ctx, "book_call", {"call_type": "discovery", "date": "2026-09-01"}
         )
-        assert result["note"] is not None
+        assert result["booked"] is False
+        assert set(result["missing"]) == {"start_time", "client_name", "client_email"}
+        assert ctx.booking is None
+
+    async def test_booking_rejects_an_unusable_email(self) -> None:
+        lead = make_lead()
+        ctx = SalesToolContext(
+            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
+        )
+        result = await execute_tool(
+            ctx,
+            "book_call",
+            {
+                "call_type": "discovery",
+                "date": "2026-09-01",
+                "start_time": "11:00",
+                "client_name": "Sara",
+                "client_email": "not-an-email",
+            },
+        )
+        assert result["booked"] is False
+        assert "client_email" in result["missing"]
+
+    async def test_a_failed_booking_never_claims_success(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Telling someone a call is booked when it is not is the worst outcome."""
+        import app.sales.booking as booking_module
+
+        async def boom(**_kwargs):
+            raise booking_module.BookingUnavailable("calendar down")
+
+        monkeypatch.setattr(booking_module, "create_booking", boom)
+
+        lead = make_lead()
+        ctx = SalesToolContext(
+            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
+        )
+        result = await execute_tool(
+            ctx,
+            "book_call",
+            {
+                "call_type": "discovery",
+                "date": "2026-09-01",
+                "start_time": "11:00",
+                "client_name": "Sara",
+                "client_email": "sara@example.com",
+            },
+        )
+        assert result["booked"] is False
+        assert "did NOT" in result["note"] or "not" in result["note"].lower()
+        assert ctx.booking is None
+
+    async def test_availability_degrades_to_a_link_when_the_calendar_is_down(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import app.sales.booking as booking_module
+
+        async def boom(*_a, **_k):
+            raise booking_module.BookingUnavailable("unreachable")
+
+        monkeypatch.setattr(booking_module, "next_available_days", boom)
+
+        lead = make_lead()
+        ctx = SalesToolContext(
+            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
+        )
+        result = await execute_tool(ctx, "check_call_availability", {})
+        assert result["available"] is False
+        assert "invent" in result["note"]
+
+
+class TestServiceTools:
+    async def test_listing_services_carries_the_starting_price_note(self) -> None:
+        lead = make_lead()
+        ctx = SalesToolContext(
+            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
+        )
+        result = await execute_tool(ctx, "list_services", {"need": "عايز موقع"})
+        assert result["available"] is True
+        assert result["services"][0]["slug"] == "marketing-site"
+        assert "STARTING" in result["note"]
+
+    async def test_unknown_package_details_are_refused(self) -> None:
+        lead = make_lead()
+        ctx = SalesToolContext(
+            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
+        )
+        result = await execute_tool(ctx, "get_service_details", {"slug": "nope"})
+        assert result["available"] is False
+
+    async def test_payment_link_needs_a_configured_site(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from app.sales import offerings as offerings_module
+
+        monkeypatch.setattr(
+            offerings_module.settings, "site_base_url", None, raising=False
+        )
+        lead = make_lead()
+        ctx = SalesToolContext(
+            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
+        )
+        result = await execute_tool(
+            ctx, "create_payment_link", {"package_slug": "cms-dashboard"}
+        )
+        assert result["available"] is False
+
+    async def test_org_type_is_captured_and_bounded(self) -> None:
+        lead = make_lead()
+        ctx = SalesToolContext(
+            db=None, tenant_id=str(lead.tenant_id), lead=lead, channel=Channel.WHATSAPP
+        )
+        await execute_tool(ctx, "save_lead_details", {"org_type": "ngo"})
+        assert lead.qualification["org_type"] == "NGO"
+
+        await execute_tool(ctx, "save_lead_details", {"org_type": "SPACESHIP"})
+        assert lead.qualification["org_type"] == "NGO"
 
 
 # ----------------------------------------------------------------------

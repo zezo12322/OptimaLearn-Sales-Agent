@@ -1,22 +1,23 @@
 """Starter knowledge base and cadences, so the agent is useful on day one.
 
-**Read this before going live.** The documents below describe only what is
-actually shipped in the platform today, and they deliberately contain **no
-prices and no numbers**: pricing comes from the live plans through the
-``get_pricing`` tool, and anything negotiated is escalated to a human. Every
-document ends with a review marker so it is obvious in the CRM which content is
-seeded and which the team has written.
+**Read this before going live.** These documents describe how Optimatech
+positions itself, drawn from the marketing site's own product brief. They contain
+**no prices and no numbers at all** — deliberately. Prices come from the live
+catalogue through ``list_services``, durations from the calendar through
+``check_call_availability``, and anything negotiated is escalated to a human. A
+number written into prose here would go stale in silence and the agent would keep
+quoting it with full confidence.
 
-Replace and extend these with your own material — the seed exists so the agent
-never has to answer from an empty knowledge base, not as a substitute for the
-team's own positioning.
+Every document ends with a review marker so it is obvious in the CRM which
+content is seeded and which the team has written. Replace and extend these with
+your own material — especially the case studies, which should name real clients.
 """
 
 from typing import Any
 
 from app.sales.enums import Audience, DocType
 
-REVIEW_MARKER = "[محتوى مبدئي — للمراجعة من فريق OptimaLearn]"
+REVIEW_MARKER = "[محتوى مبدئي — للمراجعة من فريق Optimatech]"
 
 
 def _doc(
@@ -37,102 +38,94 @@ def _doc(
 
 STARTER_DOCUMENTS: list[dict[str, Any]] = [
     _doc(
-        "نظرة عامة على منصة OptimaLearn",
+        "Optimatech — إحنا مين وبنعمل إيه",
         DocType.PRODUCT,
         Audience.ALL,
         """
-OptimaLearn منصة تعلّم وتطوير مهني بالعربي والإنجليزي، متاحة على الويب وعلى
-تطبيق موبايل (iOS و Android)، وبواجهة عربية كاملة من اليمين لليسار.
+Optimatech شركة تطوير رقمي مقرها بني سويف، بتخدم مصر ومنطقة الشرق الأوسط.
 
-اللي المنصة بتعمله فعليًا اليوم:
+اللي بنبنيه:
+• مواقع ومنصات ثنائية اللغة (عربي/إنجليزي) بدعم كامل للعربية من اليمين لليسار.
+• لوحات تحكم وأنظمة إدارة محتوى مخصصة، بصلاحيات وأدوار، يديرها فريق العميل بنفسه.
+• مساعدين بالذكاء الاصطناعي وأتمتة لتدفقات العمل والتقارير والتوجيه.
+• أنظمة تشغيل للجمعيات والمؤسسات غير الهادفة للربح.
+• إعداد Google Workspace: بريد بالدومين، تنظيم Drive، ترحيل بيانات، وتدريب.
+• Optima LMS — منصة تعلّم عربية جاهزة، واحدة من منتجاتنا.
 
-• كورسات منظّمة في أقسام ومحاضرات، مع كتالوج وتصنيفات وبحث بعنوان الكورس.
-• تشغيل فيديو مع تتبّع تقدّم دقيق: التقدّم بيتحدّث كل ثوانٍ والإكمال بيتحدّد من
-  جهة السيرفر، فالتقارير بتعكس مشاهدة حقيقية.
-• اختبارات مصغّرة (Quizzes) بتصحيح آلي، مؤقّت بيتفرض من السيرفر، ودرجة نجاح.
-• مهام عملية (Optima Missions) بتتصحّح بمعايير (Rubric) وبتتسجّل درجاتها
-  ومراجعات المدرّب عليها.
-• مساعد ذكاء اصطناعي داخل كل محاضرة بيجاوب على أسئلة الدارس من محتوى الفيديو
-  نفسه مع الرجوع لتوقيت الدقيقة في الفيديو، بالعربي أو الإنجليزي.
-• ملف شخصي للدارس فيه إحصائياته وتقدّمه.
-
-المنصة مبنية على أساس أمني واضح: صلاحيات بالأدوار، تشفير للبيانات الحساسة،
-حماية للفيديو بروابط مؤقتة موقّعة وتشفير للمقاطع، وتحديد لمعدّل الطلبات.
+اللي يفرّقنا:
+• العميل بيملك النتيجة: الكود والصلاحيات وتسليم موثّق. مش بنحتجز حد عندنا.
+• الأسعار بالجنيه المصري ومعلنة، مش بالدولار ومخفية.
+• عربي أولًا بجد — مش قالب أجنبي مترجم.
+• بنثبت قدرتنا بشغل حقيقي تم تسليمه، مش بصفات وكلام كبير.
 """,
     ),
     _doc(
-        "OptimaLearn platform overview",
+        "Optimatech — who we are",
         DocType.PRODUCT,
         Audience.ALL,
         """
-OptimaLearn is a professional learning platform available in Arabic and English,
-on the web and as a mobile app (iOS and Android), with full right-to-left Arabic
-support.
+Optimatech is a digital agency based in Beni Suef, serving Egypt and the wider
+MENA region.
 
-What the platform does today:
+What we build:
+• Bilingual (Arabic/English) websites and platforms with real right-to-left support.
+• Custom dashboards and content management systems with roles and permissions,
+  designed for an Arabic-speaking team to run themselves.
+• AI assistants and automation for workflows, reporting and routing.
+• Operations systems for NGOs and non-profits.
+• Google Workspace setup: domain email, Drive structure, data migration, training.
+• Optima LMS — an Arabic-native learning platform, one of our own products.
 
-• Courses organised into sections and lectures, with a catalogue, categories and
-  title search.
-• Video playback with granular progress tracking. Completion is derived
-  server-side, so reporting reflects real watch time rather than a client claim.
-• Quizzes with automatic grading, a server-enforced timer and a pass mark.
-• Practical assignments (Optima Missions) graded against a rubric, with
-  per-criterion scores and instructor feedback.
-• An AI tutor inside each lecture that answers questions from that lecture's own
-  content and cites the timestamp it came from, in Arabic or English.
-• A learner profile with personal progress and statistics.
-
-Security is built in: role-based access control, encryption of sensitive personal
-data, protected video delivery through short-lived signed links and encrypted
-segments, and request rate limiting.
+What sets us apart:
+• The client owns the result: the code, the access, and a documented handover.
+• Prices are published in Egyptian pounds, not quoted in dollars and hidden.
+• Genuinely Arabic-first, not a translated foreign template.
+• We prove capability with real shipped work rather than adjectives.
 """,
         locale="en",
     ),
     _doc(
-        "سياسة التسعير وكيف نتكلم عنها",
+        "سياسة التسعير وإزاي نتكلم عنها",
         DocType.PRICING,
         Audience.ALL,
         """
-مهم: الأسعار مش مكتوبة في المستند ده بالمرة. الباقات وأسعارها الحقيقية بتتجاب
-من النظام مباشرة وقت الكلام مع العميل.
+مهم: مفيش أي رقم في المستند ده بالمرة. أسعار الباقات بتتجاب من النظام مباشرة
+وقت الكلام مع العميل.
 
 القواعد:
 • أي رقم بيتقال للعميل لازم يكون جاي من بيانات الباقات الحيّة، مش من الذاكرة.
-• الاشتراك بيتدفع أونلاين من داخل المنصة عن طريق بوابة دفع إلكتروني.
-• طرق دفع إضافية (فوري / إنستاباي) على خطة التطوير، فمينفعش نتعامل معاها
-  كمتاحة حاليًا.
-• أي خصم، أو سعر خاص، أو عرض لفريق كبير، أو تقسيط، أو فاتورة رسمية، أو عقد —
-  كل ده بيتحوّل لموظف بشري فورًا. الوكيل ميوعدش بأي خصم.
-• لو العميل سأل عن سعر ومفيش بيانات باقات متاحة في اللحظة، نقول إننا هنبعتله
-  التفاصيل بالظبط ونحوّله لحد من الفريق.
+• كل سعر معلن هو سعر **بداية**. النطاق والسعر النهائي بيتأكدوا كتابةً بعد مكالمة
+  قصيرة. لازم نقول ده كل مرة نذكر فيها سعر.
+• الدفع أونلاين من صفحة الدفع على الموقع، بالجنيه المصري.
+• ينفع العميل يدفع دفعة مقدمة أو مبلغ متفق عليه من نفس الصفحة.
+• أي خصم، أو سعر مخصص، أو عقد، أو فاتورة رسمية، أو مناقصة — بيتحوّل لموظف بشري
+  فورًا. الوكيل ميوعدش بأي خصم وميتفاوضش.
+• لو المشروع أكبر من أي باقة معلنة، ده تحويل لموظف مش تسعير.
+• لو العميل سأل بالدولار: نقوله السعر بالجنيه ونسيبه يحوّل بنفسه.
 
-لو عميل شركة سأل عن تكلفة عدد مستخدمين: ينفع نعرض حساب تقريبي مبني على سعر
-الباقة المعلن × عدد المستخدمين، مع توضيح صريح إنه رقم استرشادي والسعر النهائي
-بيتأكد من الفريق.
+ليه بنسعّر تحت السوق: القرار مقصود لكسب الشركات الصغيرة والمتوسطة الحساسة للسعر
+في مصر. مش لازم نبرر السعر ولا نتكلم عن هوامشنا مع العميل.
 """,
     ),
     _doc(
-        "تدريب فرق الشركات — الوضع الحالي",
+        "إزاي بنشتغل — من أول كلام لحد التسليم",
         DocType.PRODUCT,
-        Audience.B2B,
+        Audience.ALL,
         """
-للشركات اللي عايزة تدرّب فريقها على OptimaLearn:
+المسار المعتاد:
 
-المتاح دلوقتي:
-• إنشاء حسابات للموظفين وتسجيلهم على كورسات محددة، بإدارة من فريقنا مع مسؤول
-  التدريب في الشركة.
-• متابعة تقدّم كل دارس (نسبة المشاهدة، إكمال المحاضرات، درجات الاختبارات
-  والمهام) من لوحة الإدارة.
-• محتوى بالعربي والإنجليزي على الويب والموبايل، فمينفعش يكون اللغة عائق.
-• إمكانية بناء كورسات خاصة بالشركة ومهام عملية مرتبطة بشغلها الفعلي.
+أولًا: مكالمة تعارف مجانية وقصيرة. بنفهم فيها العميل بيستخدم إيه دلوقتي وعايز
+يوصل لإيه. مفيش أي التزام.
 
-على خطة التطوير (لسه مش متاح — منقولوش إنه موجود):
-• لوحة تحكم self-service لمسؤول الشركة فيها تحليل فجوات المهارات وتقدّم الفريق.
-• استيراد الموظفين بملف CSV ومجموعات للشركات.
-• تقارير الحضور والتصدير.
+بعدها: عرض مكتوب فيه النطاق بالتفصيل والسعر النهائي. مفيش مفاجآت.
 
-الطريقة الصح في الكلام: نوضّح اللي متاح دلوقتي بصراحة، ولو الشركة محتاجة حاجة
-من اللي على الخطة، نحوّلها لموظف بشري يتكلم معاها في التوقيتات.
+بعد الموافقة: اجتماع بدء مشروع، وبعده التنفيذ على مراحل مع مراجعات مع العميل.
+
+التسليم: الكود والصلاحيات كلها بتنتقل للعميل، مع توثيق وتدريب لفريقه. العميل
+يقدر يكمّل بنفسه أو مع أي حد تاني — مش مربوط بينا.
+
+نقطة مهمة نقولها بصراحة: إحنا فريق محلي صغير بنشتغل على عدد محدود من المشاريع في
+نفس الوقت. لو التوقيت مش متاح، نقول كده بدل ما نوعد ونتأخر.
 """,
     ),
     _doc(
@@ -140,31 +133,33 @@ segments, and request rate limiting.
         DocType.FAQ,
         Audience.ALL,
         """
-س: المنصة بالعربي؟
-ج: أيوه، واجهة عربية كاملة RTL على الويب والموبايل، وفيه إنجليزي كمان، والدارس
-يقدر يبدّل اللغة.
+س: بتشتغلوا مع مؤسسات صغيرة ولا الشركات الكبيرة بس؟
+ج: الشركات الصغيرة والمتوسطة والجمعيات والستارتابس هما جمهورنا الأساسي.
 
-س: فيه تطبيق موبايل؟
-ج: أيوه، تطبيق للـ iOS والأندرويد فيه تشغيل الكورسات ومتابعة التقدّم.
+س: الموقع هيكون بالعربي؟
+ج: أيوه، عربي وإنجليزي بنفس الجودة، وبدعم كامل للاتجاه من اليمين لليسار. مش
+ترجمة على قالب أجنبي.
 
-س: الشهادات؟
-ج: النظام بيسجّل إنجاز الدارس ودرجاته. تفاصيل إصدار الشهادات بالظبط بيأكدها
-موظف من الفريق.
+س: الكود بيبقى ملكنا؟
+ج: أيوه. الكود والصلاحيات بتنتقل لكم مع توثيق وتسليم رسمي.
 
-س: ينفع أجرّب قبل الشراء؟
-ج: فيه محاضرات معاينة مجانية في الكورسات. لو حابب عرض توضيحي (Demo) نرتّبه.
+س: بتستخدموا إيه تقنيًا؟
+ج: بنبني بـ Next.js وTailwind للواجهات، وSupabase أو PostgreSQL للبيانات،
+وموديلات Claude وGemini في الأتمتة. لو العميل عنده تفضيل معين نتكلم فيه.
 
-س: المحتوى محمي؟
-ج: أيوه. الفيديو بيتشغّل بروابط مؤقتة موقّعة والمقاطع مشفّرة، والتخزين مقفول
-افتراضيًا. مفيش تحميل مباشر للفيديو.
+س: فيه صيانة بعد التسليم؟
+ج: ينفع نتفق على ترتيب للدعم والصيانة. التفاصيل بتتأكد مع الفريق.
 
-س: فيه مساعد ذكاء اصطناعي؟
-ج: أيوه. جوّه كل محاضرة فيه مساعد بيجاوب من محتوى المحاضرة نفسها وبيقولك
-الدقيقة اللي الإجابة فيها، بالعربي أو الإنجليزي.
+س: بتشتغلوا من بره مصر؟
+ج: أيوه، بنخدم منطقة الشرق الأوسط، والتعامل عن بُعد.
 
-س: بياناتنا آمنة؟
-ج: الصلاحيات بالأدوار، والبيانات الشخصية الحساسة مشفّرة، وفيه سجل للعمليات
-الحساسة. أي سؤال قانوني أو تعاقدي عن الخصوصية بيتحوّل لموظف بشري.
+س: فيه شغل سابق نشوفه؟
+ج: أيوه، فيه منصات حقيقية تم تسليمها لعملاء في قطاعات مختلفة — جمعيات، تعليم
+صحي، استشارات بيئية، صحة عامة، تدريب مهني، وهوية بصرية. اسأل الفريق عن الأقرب
+لمجالك.
+
+س: بتدفعوا إزاي؟
+ج: الدفع أونلاين من صفحة الدفع، بالجنيه المصري، وينفع دفعة مقدمة.
 """,
     ),
     _doc(
@@ -173,28 +168,51 @@ segments, and request rate limiting.
         Audience.ALL,
         """
 اعتراض: "السعر عالي."
-الرد: منجادلش في السعر. نسأل بالظبط هو بيقارن بإيه، ونرجع للقيمة: تتبّع تقدّم
-حقيقي، اختبارات ومهام بتصحيح، ومساعد AI جوّه المحاضرة. لو محتاج سعر مختلف عن
-المعلن → تحويل لموظف بشري فورًا.
+الرد: منجادلش. نسأل بيقارن بإيه بالظبط. الأغلب بيكون بيقارن بحد بيشتغل لوحده أو
+بوكالة بتسعّر بالدولار. نرجع للقيمة: العميل بيملك الكود، والتسليم موثّق، والسعر
+بالجنيه ومعلن. لو محتاج سعر مختلف عن المعلن → تحويل لموظف فورًا.
 
-اعتراض: "إحنا مستخدمين منصة تانية."
-الرد: نسأل إيه الناقص في اللي مستخدمينه. الأغلب بيكون: محتوى عربي حقيقي،
-متابعة تقدّم مش شكلية، أو مهام عملية بتتصحّح. نتكلم في النقطة اللي وجعته بس.
+اعتراض: "لقيت حد أرخص."
+الرد: محترم. نسأل الأرخص بيسلّم إيه بالظبط — الكود؟ توثيق؟ دعم بعد التسليم؟
+منقللش من حد، بس نوضّح الفرق في اللي بيتسلّم.
 
-اعتراض: "الموظفين مش هيستخدموها."
-الرد: نسأل جرّبوا إيه قبل كده وإيه اللي حصل. نتكلم عن إن التطبيق بالعربي وعلى
-الموبايل، وإن التقدّم بيتقاس فعليًا فمسؤول التدريب يقدر يشوف مين ماشي ومين لأ.
+اعتراض: "عندنا موقع بالفعل."
+الرد: نسأل إيه اللي مضايقهم فيه دلوقتي. لو مفيش حاجة، منبيعش. الأغلب بيكون:
+مش متجاوب على الموبايل، أو مش بيتحدّث لوحدهم، أو مش بالعربي كفاية.
 
-اعتراض: "مش وقته دلوقتي."
-الرد: نحترم ده. نسأل إمتى يكون الوقت مناسب، ونسجّله، ونسأل لو ينفع نبعتله
-حاجة مفيدة لحد الوقت ده. لو قال لأ، نسيبه في حاله.
+اعتراض: "مش واثق في الشغل عن بُعد / في فريق مش معروف."
+الرد: نعرض شغل حقيقي تم تسليمه لعملاء بأسمائهم، ونعرض مكالمة تعارف مجانية. الثقة
+تتبنى بالتحديد مش بالوعود.
 
-اعتراض: "عايز أتكلم مع حد."
-الرد: نحوّل فورًا بدون أي مناقشة أو محاولة إقناع.
+اعتراض: "الوقت ضيق عندي."
+الرد: نحترم ده. نسأل إمتى يكون الوقت مناسب ونسجّله. لو قال مش دلوقتي، نسيبه في
+حاله.
+
+اعتراض: "ينفع تعملوا حاجة أكبر من الباقات المعلنة؟"
+الرد: أيوه، وده بيتسعّر مخصص — تحويل لموظف بشري مباشرة.
 
 اعتراض: "إنت روبوت؟"
-الرد: نقول بصراحة إننا مساعد AI بنشتغل مع فريق OptimaLearn، وإن زميل من الفريق
+الرد: نقول بصراحة إننا مساعد AI بنشتغل مع فريق Optimatech، وإن زميل من الفريق
 ينفع يدخل في أي وقت.
+""",
+    ),
+    _doc(
+        "الجمعيات والمؤسسات غير الهادفة للربح",
+        DocType.PRODUCT,
+        Audience.B2B,
+        """
+كتير من الجمعيات اللي بنشتغل معاها بتبدأ من نفس المكان: إيميلات شخصية على Gmail،
+ملفات متفرقة، قرارات ماشية على واتساب، وتقارير للمانحين بتتعمل يدوي كل مرة.
+
+اللي بنعمله معاهم عادةً:
+• تنظيم البريد والملفات على Google Workspace بالدومين بتاعهم، مع تدريب للفريق.
+• نظام لسجلات المستفيدين والأنشطة بصلاحيات لكل موظف حسب دوره.
+• تقارير بتتولّد لوحدها بدل ما تتجمّع يدوي.
+• موقع بالعربي والإنجليزي يعرض الشغل للمانحين.
+
+الكلام الصح مع جمعية: مش عن "التحول الرقمي"، لكن عن الوقت اللي بيروح في الشغل
+اليدوي وإزاي يرجع للأنشطة نفسها. والميزانيات هنا بتكون محسوبة، فالصراحة في السعر
+أهم من أي حاجة.
 """,
     ),
     _doc(
@@ -204,25 +222,26 @@ segments, and request rate limiting.
         """
 • منطلبش رقم قومي، ولا رقم كارت، ولا بيانات بنكية، ولا كلمة سر، ولا كود OTP.
   أبدًا. لو العميل بعت أي حاجة من دي، منكرّرهاش ومنسجّلهاش.
-• بنجمع بس اللي محتاجينه للتواصل والتأهيل: الاسم، وسيلة تواصل، الشركة، الاحتياج،
-  التوقيت، والميزانية لو العميل قالها بنفسه.
-• لو العميل قال "الغاء" أو "stop" أو أي طلب بوقف الرسايل، نوقف فورًا ونأكّد
-  بسطر واحد بدون أي عرض بيعي.
+• بنجمع بس اللي محتاجينه للتواصل والتأهيل: الاسم، وسيلة تواصل، جهة العمل ونوعها،
+  الاحتياج، اللي مستخدمينه دلوقتي، التوقيت، والميزانية لو العميل قالها بنفسه.
+• لو العميل قال "الغاء" أو "stop" أو أي طلب بوقف الرسايل، نوقف فورًا ونأكّد بسطر
+  واحد بدون أي عرض بيعي.
 • أي طلب بحذف بيانات أو سؤال عن الخصوصية بمعنى قانوني بيتحوّل لموظف بشري.
+• منشاركش تفاصيل عميل مع عميل تاني، ولا نستخدم اسم عميل كمرجع من غير إذن.
 """,
     ),
 ]
 
 
 #: Follow-up cadences. Copy is free-form and is sent as plain text while the
-#: 24-hour service window is open; once it closes the sender falls back to the
-#: approved re-engagement template configured in settings.
+#: service window is open; once it closes the sender falls back to the approved
+#: re-engagement template configured in settings.
 STARTER_SEQUENCES: list[dict[str, Any]] = [
     {
         "name": "b2b-followup",
         "description": (
-            "Three touches over a week for team buyers who engaged but did not "
-            "book. Stops the moment they reply or reach a goal stage."
+            "Three touches over a week for an organisation that engaged but did "
+            "not book. Stops the moment they reply or reach a goal stage."
         ),
         "audience": Audience.B2B.value,
         "steps": [
@@ -232,17 +251,17 @@ STARTER_SEQUENCES: list[dict[str, Any]] = [
                 "goal": "restart the conversation with something useful",
                 "body": (
                     "اهلا {{name}}، أنا {{agent}} من {{product}}. "
-                    "كنت بسألك عن تدريب الفريق — تحب أبعتلك الكورسات اللي "
-                    "بتناسب شغلكم بالظبط؟"
+                    "كنا بنتكلم على اللي محتاجينه — تحب أبعتلك اللي بيناسب "
+                    "شغلكم بالظبط؟"
                 ),
             },
             {
                 "delay_hours": 72,
                 "channel": "WHATSAPP",
-                "goal": "offer a short demo",
+                "goal": "offer the free discovery call",
                 "body": (
-                    "{{name}}، لو ينفع ربع ساعة عرض سريع على {{product}} "
-                    "أوريك إزاي بتتابع تقدّم الفريق فعليًا. يوم إيه يناسبك؟"
+                    "{{name}}، فيه مكالمة تعارف مجانية وقصيرة لو حابب نفهم "
+                    "الصورة أكتر ونقولك رأينا بصراحة. يوم إيه يناسبك؟"
                 ),
             },
             {
@@ -250,8 +269,8 @@ STARTER_SEQUENCES: list[dict[str, Any]] = [
                 "channel": "WHATSAPP",
                 "goal": "close the loop politely",
                 "body": (
-                    "{{name}}، مش عايز أزعجك. أقفل الموضوع دلوقتي وأرجعلك "
-                    "بعدين، ولا تحب نكمل؟"
+                    "{{name}}، مش عايز أزعجك. أقفل الموضوع دلوقتي وأرجعلك بعدين، "
+                    "ولا تحب نكمل؟"
                 ),
             },
         ],
@@ -259,8 +278,8 @@ STARTER_SEQUENCES: list[dict[str, Any]] = [
     {
         "name": "b2c-followup",
         "description": (
-            "Two touches for individual learners who asked about a course and "
-            "did not enrol."
+            "Two touches for an individual who asked about a service and did not "
+            "move."
         ),
         "audience": Audience.B2C.value,
         "steps": [
@@ -270,7 +289,7 @@ STARTER_SEQUENCES: list[dict[str, Any]] = [
                 "goal": "answer the remaining question",
                 "body": (
                     "اهلا {{name}}، أنا {{agent}} من {{product}}. "
-                    "فيه حاجة لسه مش واضحة في الكورس اللي كنت بتسأل عليه؟"
+                    "فيه حاجة لسه مش واضحة في اللي كنت بتسأل عليه؟"
                 ),
             },
             {
@@ -278,8 +297,8 @@ STARTER_SEQUENCES: list[dict[str, Any]] = [
                 "channel": "WHATSAPP",
                 "goal": "last useful nudge",
                 "body": (
-                    "{{name}}، فيه محاضرات معاينة مجانية تقدر تجرّبها قبل أي "
-                    "قرار. أبعتلك اللينك؟"
+                    "{{name}}، لو حابب نتكلم مكالمة قصيرة مجانية ونقولك رأينا "
+                    "بصراحة قبل أي قرار، قولي وأرتّبها."
                 ),
             },
         ],

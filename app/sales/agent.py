@@ -58,7 +58,7 @@ class AgentReply:
     citations: list[dict[str, Any]] = field(default_factory=list)
     captured: dict[str, Any] = field(default_factory=dict)
     handoff: Optional[dict[str, Any]] = None
-    demo: Optional[dict[str, Any]] = None
+    booking: Optional[dict[str, Any]] = None
     #: False when the reply is the canned fallback rather than a model answer.
     ok: bool = True
 
@@ -159,7 +159,7 @@ async def generate_reply(
         today=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         lead_summary=summarize_lead(lead, score),
         next_question_hint=score.next_question_hint,
-        has_booking_url=bool(settings.sales_booking_url),
+        can_book_calls=bool(settings.site_internal_api_key),
     )
 
     messages: list[dict[str, Any]] = [
@@ -234,7 +234,7 @@ async def generate_reply(
                 "urgency": "HIGH",
                 "summary": "Agent generation failed; needs a human reply.",
             },
-            demo=ctx.demo,
+            booking=ctx.booking,
             ok=False,
         )
 
@@ -252,7 +252,7 @@ async def generate_reply(
                 "urgency": "NORMAL",
                 "summary": "Model returned no text; needs a human reply.",
             },
-            demo=ctx.demo,
+            booking=ctx.booking,
             ok=False,
         )
 
@@ -263,7 +263,7 @@ async def generate_reply(
         citations=ctx.citations,
         captured=ctx.captured,
         handoff=ctx.handoff,
-        demo=ctx.demo,
+        booking=ctx.booking,
         ok=True,
     )
 

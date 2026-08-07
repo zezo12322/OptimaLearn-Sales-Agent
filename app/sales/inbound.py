@@ -445,8 +445,10 @@ async def _apply_reply_side_effects(
             db, lead, EventType.DETAILS_CAPTURED, {"fields": reply.captured}
         )
 
-    if reply.demo:
-        await repository.log_event(db, lead, EventType.DEMO_BOOKED, reply.demo)
+    if reply.booking:
+        # A booked call is a real commitment on both sides, so the stage moves
+        # even though scoring would otherwise still call this "qualifying".
+        await repository.log_event(db, lead, EventType.DEMO_BOOKED, reply.booking)
         lead.stage = Stage.DEMO_BOOKED.value
 
     if reply.handoff:
