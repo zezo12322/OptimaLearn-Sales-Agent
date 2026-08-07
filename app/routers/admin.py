@@ -683,8 +683,10 @@ async def preview_chat(
     code path, so what is tested here is what customers get.
     """
     event = InboundEvent(
-        channel=Channel.WEB,
+        channel=payload.channel,
         kind=KIND_MESSAGE,
+        # The prefix keeps preview identities in their own namespace, so
+        # imitating WHATSAPP here can never collide with a real contact.
         external_id=f"preview:{payload.session_id}",
         text=payload.message,
         profile_name=payload.display_name,

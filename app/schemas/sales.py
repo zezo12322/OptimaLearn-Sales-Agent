@@ -180,6 +180,10 @@ class PreviewChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     tenant_id: Optional[uuid.UUID] = None
     display_name: Optional[str] = Field(default=None, max_length=200)
+    #: Which channel to imitate. Defaults to WEB, but the prompt's formatting
+    #: rules differ per channel, so the evals ask for WHATSAPP — otherwise they
+    #: would grade a reply nobody on the real channel ever receives.
+    channel: Channel = Channel.WEB
 
 
 class PreviewChatOut(BaseModel):
