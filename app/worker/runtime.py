@@ -22,10 +22,10 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
-    create_async_engine,
 )
 
 from app.core.config import settings
+from app.core.engine import build_async_engine
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +50,11 @@ def _get_loop() -> asyncio.AbstractEventLoop:
 def _get_session_factory() -> async_sessionmaker[AsyncSession]:
     global _engine, _engine_pid, _session_factory
     if _session_factory is None or _engine_pid != os.getpid():
-        _engine = create_async_engine(
+        # Small pool: concurrency here is the number of Celery slots, not the
+        # number of HTTP requests. Dropped when the URL is a transaction pooler,
+        # which does the pooling itself.
+        _engine = build_async_engine(
             settings.database_url,
-            pool_pre_ping=True,
-            # Small pool: concurrency here is the number of Celery slots, not the
-            # number of HTTP requests.
             pool_size=5,
             max_overflow=5,
         )
