@@ -31,16 +31,23 @@ from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 
 from app.core.config import settings
 
+# Shared by both shapes. See Settings for why the SDK defaults are not kept.
+_common = {
+    "api_key": settings.azure_openai_api_key,
+    "max_retries": settings.azure_max_retries,
+    "timeout": settings.azure_timeout_seconds,
+}
+
 if settings.azure_openai_base_url:
     _kwargs = {
-        "api_key": settings.azure_openai_api_key,
+        **_common,
         "base_url": settings.azure_openai_base_url,
     }
     async_client: AsyncOpenAI = AsyncOpenAI(**_kwargs)
     sync_client: OpenAI = OpenAI(**_kwargs)
 else:
     _azure_kwargs = {
-        "api_key": settings.azure_openai_api_key,
+        **_common,
         "azure_endpoint": settings.azure_openai_endpoint,
         "api_version": settings.azure_openai_api_version,
     }

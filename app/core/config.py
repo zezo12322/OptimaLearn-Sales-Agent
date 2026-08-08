@@ -48,6 +48,18 @@ class Settings(BaseSettings):
     azure_deployment_embeddings: str = "text-embedding-3-small"
     azure_deployment_chat: str = "gpt-5-mini"
 
+    #: Retries the model client makes on 429 and 5xx, with exponential backoff
+    #: honouring Retry-After. The SDK default of 2 is tuned for a provisioned
+    #: endpoint; a fresh Azure deployment starts on a small tokens-per-minute
+    #: quota, and a reasoning model burns that quota fast. Every exhausted retry
+    #: is a prospect who gets an apology instead of an answer, so it is worth
+    #: waiting a few seconds to avoid one.
+    azure_max_retries: int = 5
+    #: Seconds before a single model call is abandoned. Reasoning models are
+    #: slow, and the SDK's ten-minute default is far longer than a person on
+    #: WhatsApp will wait.
+    azure_timeout_seconds: float = 90.0
+
     # ------------------------------------------------------------------
     # Agent identity and behaviour
     # ------------------------------------------------------------------
