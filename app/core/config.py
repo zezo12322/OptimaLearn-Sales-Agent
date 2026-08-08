@@ -1,6 +1,6 @@
 """Configuration for the sales agent service.
 
-Everything is env-driven with sane defaults except the five things that have no
+Everything is env-driven with sane defaults except the things that have no
 safe default — the internal API key, the database URLs, Redis, and the Azure
 OpenAI credentials. Those are required, so a misconfigured deployment fails at
 startup instead of at the first customer message.
@@ -12,6 +12,7 @@ will not do is send anything without them.
 
 import uuid
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 #: Tenant used when a caller does not supply one. A single-tenant deployment
@@ -33,8 +34,16 @@ class Settings(BaseSettings):
     redis_url: str
 
     azure_openai_api_key: str
-    azure_openai_endpoint: str
-    azure_openai_api_version: str
+    #: Reach Azure one of two ways — see app/ai/client.py for why both exist.
+    #:
+    #: v1 API: set base_url to https://<resource>.openai.azure.com/openai/v1 and
+    #: leave the other two unset. No api-version to pin, which removes a whole
+    #: class of confusing request-time failures.
+    #:
+    #: Classic API: set endpoint and api_version, leave base_url unset.
+    azure_openai_base_url: str | None = None
+    azure_openai_endpoint: str | None = None
+    azure_openai_api_version: str | None = None
 
     azure_deployment_embeddings: str = "text-embedding-3-small"
     azure_deployment_chat: str = "gpt-5-mini"
@@ -134,6 +143,24 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
     )
+
+    @model_validator(mode="after")
+    def _require_one_azure_shape(self) -> "Settings":
+        """Refuse to boot on a half-configured model endpoint.
+
+        Leaving these merely optional would let the service start, serve its
+        health check, and then fail on the first prospect's message — the worst
+        possible moment to discover a typo in an environment variable.
+        """
+        if self.azure_openai_base_url:
+            return self
+        if self.azure_openai_endpoint and self.azure_openai_api_version:
+            return self
+        raise ValueError(
+            "Azure OpenAI is not configured. Set AZURE_OPENAI_BASE_URL "
+            "(https://<resource>.openai.azure.com/openai/v1), or both "
+            "AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_VERSION."
+        )
 
     @property
     def sales_chat_deployment(self) -> str:

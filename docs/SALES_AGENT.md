@@ -11,7 +11,7 @@
 | Meta Business Account موثّق | شرط لـ WhatsApp Cloud API ولـ Lead Ads |
 | رقم واتساب مخصّص للأعمال | **مايكونش مستخدم على تطبيق WhatsApp العادي** — الرقم بيتنقل للـ Cloud API |
 | صفحة فيسبوك | للـ Messenger و comment-to-DM و Lead Ads |
-| Azure OpenAI | deployment للـ chat (`gpt-5-mini` أو أعلى) وdeployment للـ embeddings (`text-embedding-3-small`) |
+| Azure OpenAI | deployment للـ chat (`gpt-5-mini` أو أعلى) وdeployment للـ embeddings (`text-embedding-3-small`). التفاصيل في **4.2** |
 | PostgreSQL 16 + pgvector | قاعدة معرفة المبيعات |
 | Redis | Celery broker |
 
@@ -101,6 +101,28 @@ psql "$SYNC_DATABASE_URL" -f supabase/rls_policies.sql
 > `vector` مثبّتة في `public` مش `extensions`، عن قصد: الـ agent بيوصّل بـ SQLAlchemy، ولو الـ extension في schema تانية يبقى نوع `VECTOR` وopclass `vector_cosine_ops` معتمدين على إن `search_path` بتاع الـ role اللي بيوصّل فيه `extensions`. `btree_gist` أصلًا في `public` في نفس المشروع، فده متسق. الـ linter بيطلّع WARN على الحالة دي — متوقّع ومقبول.
 
 ### 4.2 المتغيرات في الوكيل
+
+**الموديل** — فيه شكلين، اختار واحد. الخدمة بترفض تقوم لو واحد منهم نصّه ناقص، عشان الغلط يبان وقت الإقلاع مش عند أول رسالة من عميل.
+
+```
+AZURE_OPENAI_API_KEY=<المفتاح>
+
+# (1) الـ v1 API — المفضّل. متوافق مع OpenAI ومفيهوش api-version تثبّته.
+AZURE_OPENAI_BASE_URL=https://<اسم-المورد>.openai.azure.com/openai/v1
+
+# (2) أو الشكل الكلاسيكي — سيب BASE_URL فاضي وحطّ الاتنين دول:
+# AZURE_OPENAI_ENDPOINT=https://<اسم-المورد>.openai.azure.com/
+# AZURE_OPENAI_API_VERSION=2024-10-21
+
+AZURE_DEPLOYMENT_CHAT=gpt-5-mini
+AZURE_DEPLOYMENT_EMBEDDINGS=text-embedding-3-small
+```
+
+> `AZURE_DEPLOYMENT_*` بياخدوا اسم الـ **deployment** زي ما هو ظاهر في Azure AI Foundry، مش اسم الموديل. لو سمّيت الـ deployment باسم الموديل بالظبط، الاتنين بيبقوا نفس الحاجة.
+>
+> **ليه الـ v1 أحسن:** في الشكل الكلاسيكي، `api-version` قديمة على موديل جديد بتفشل برسالة عن **باراميتر غير معروف** مش عن الإصدار — وده وقت ضايع في تشخيص حاجة مالهاش علاقة.
+
+**الموقع:**
 
 ```
 SITE_BASE_URL=https://www.digitaloptima.tech
