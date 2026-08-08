@@ -27,4 +27,11 @@ RUN mkdir -p "$TIKTOKEN_CACHE_DIR" \
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form on purpose: most hosts (Railway, Render, Fly, Cloud Run) assign the
+# port at runtime through $PORT and route to that, not to whatever the image
+# happens to EXPOSE. The exec form would pass the literal string "${PORT:-8000}"
+# to uvicorn and the container would bind nowhere reachable — a health check that
+# times out with a perfectly healthy process inside.
+#
+# Falls back to 8000 so docker-compose and a bare `docker run` are unchanged.
+CMD uv run uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
