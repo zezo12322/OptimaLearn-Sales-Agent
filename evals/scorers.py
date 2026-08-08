@@ -128,6 +128,21 @@ _STARTING_MARKERS = (
     "سعر بداية",
     "سعر البداية",
     "نقطة بداية",
+    # Added after a live run rejected a correct answer. The agent said both
+    # "مبتدي من 11,900 جنيه" and "السعر دا بداية" — framed twice, in fluent
+    # Egyptian, and scored as a bare quote because neither spelling was listed.
+    # This scorer is only ever as good as this list, which is why the README
+    # says to add a phrasing rather than argue with it: the alternative, letting
+    # a bare number through in silence, is the one that costs money.
+    "مبتدي من",
+    "مبتدئ من",
+    "ابتداء من",
+    "ابتداءً من",
+    "بادئ من",
+    "السعر دا بداية",
+    "السعر ده بداية",
+    "دا سعر بداية",
+    "ده سعر بداية",
     "starting",
     "starts at",
     "starts from",

@@ -334,3 +334,27 @@ def test_negation_particles_must_be_whole_words() -> None:
 
     busy = "الفريق مشغول دلوقتي بس هرد عليك."
     assert not _s.refuses(_turn(busy)).passed
+
+
+def test_egyptian_starting_price_phrasings_are_accepted() -> None:
+    """Verbatim from a live run, where each of these was rejected.
+
+    The scorer knows only the phrasings in its list, so a correct answer in a
+    spelling nobody wrote down fails. That is the safe direction — a false alarm
+    sends someone to read the conversation — but it is still a defect, and the
+    fix is to add the phrasing, not to loosen the check.
+    """
+    real = (
+        'تمام — بنعمل "موقع تسويقي ثنائي اللغة" مبتدي من 11,900 جنيه. '
+        "بيشمل لحد 6 صفحات ثنائية اللغة، فورم تواصل مع ربط واتساب، وتسليم موثق "
+        "والكود ملك فريقك. السعر دا بداية؛ النطاق والسعر النهائي بيتأكدوا بعد "
+        "مكالمة كشف."
+    )
+    assert _s.states_price_is_starting(_turn(real)).passed
+
+
+def test_a_bare_catalogue_price_still_fails() -> None:
+    # The whole point. Widening the list must not turn the check off.
+    assert not _s.states_price_is_starting(
+        _turn("الموقع التسويقي بـ 11,900 جنيه. تحب نبدأ؟")
+    ).passed
