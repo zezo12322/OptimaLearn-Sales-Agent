@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from typing import Any, Optional
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.embeddings import EmbeddingError, embed_texts
@@ -784,19 +785,71 @@ async def _tool_save_lead_details(
             setattr(lead, attr, value)
             saved[attr] = value
 
+    async def set_contact_if_free(attr: str, value: str, label: str) -> None:
+        """Fill a contact field, unless another lead in this tenant owns it.
+
+        ``email`` and ``phone_e164`` are unique per tenant — that index is what
+        stops the same person becoming two leads. But the model has no idea the
+        constraint exists, so it happily saves an address that belongs to
+        somebody else's conversation, and the violation surfaces at flush time,
+        far from here.
+
+        That failure is genuinely nasty. Depending on which query triggers the
+        autoflush, it either lands inside the agent's own try block — where the
+        prospect gets the "technical problem" apology and the log gets a
+        traceback — or escapes to the endpoint as a 500. One cause, two symptoms
+        that look unrelated, both of them a conversation lost.
+
+        It is not hypothetical, and it is not only an eval artefact: one person
+        writing from a second number, or a colleague giving the shared company
+        address, is an ordinary Tuesday.
+
+        So: ask first. If the address is taken, keep it out of the column and
+        say so in the tool result — the model then has something true to work
+        with instead of a silent drop, and a human can merge the two leads in
+        the CRM, which is the only place that decision belongs.
+        """
+        if getattr(lead, attr, None) not in (None, "", 0):
+            return
+        if ctx.db is None:
+            # "Is this address taken?" is a question only the database can
+            # answer. Unit-level callers construct a context without one; there
+            # is no session in production, ever, where this is None.
+            setattr(lead, attr, value)
+            saved[attr] = value
+            return
+        column = getattr(type(lead), attr)
+        existing = await ctx.db.execute(
+            select(type(lead).id)
+            .where(
+                type(lead).tenant_id == lead.tenant_id,
+                column == value,
+                type(lead).id != lead.id,
+            )
+            .limit(1)
+        )
+        if existing.scalar_one_or_none() is not None:
+            rejected[label] = (
+                "already belongs to another lead in the CRM — left unsaved. "
+                "Do not ask for it again; a colleague will merge the records."
+            )
+            return
+        setattr(lead, attr, value)
+        saved[attr] = value
+
     set_if_new("full_name", clean_text(args.get("full_name"), max_length=120))
 
     if args.get("email") is not None:
         email = normalize_email(args.get("email"))
         if email:
-            set_if_new("email", email)
+            await set_contact_if_free("email", email, "email")
         else:
             rejected["email"] = "not a valid e-mail address"
 
     if args.get("phone") is not None:
         phone = normalize_phone(args.get("phone"))
         if phone:
-            set_if_new("phone_e164", phone)
+            await set_contact_if_free("phone_e164", phone, "phone")
         else:
             rejected["phone"] = "not a valid phone number"
 
